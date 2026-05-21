@@ -2,7 +2,7 @@
 
 > Multi-project agent platform — central coordination space where separate workspaces meet.
 
-**Status:** early. Scaffold only. Framework extraction in progress.
+**Status (S18, 2026-05-21):** Working external-peer bridge in production. Framework extraction in progress; first reference implementation (atrium-mailbox transport + external-peer-cycle worker + dual-loop wake mechanism + protocol v0.2 + drift detector) live and autonomous in a private deployment. Public extraction next.
 
 ---
 
@@ -41,16 +41,52 @@ Plus two doctrinal disciplines no surveyed framework enforces:
 - **Anti-spiral rule**: every agent dispatch must produce one of {research artifact, tool, action, operator answer}. Prevents drift into meta-work.
 - **Information asymmetry by design**: in three-critic dispatch (e.g., fact-checker / risk-challenger / portfolio-skeptic), each critic sees deliberately scoped subset of context. Confirmation bias engineered out, not just discouraged.
 
+## What's running today (S18 milestone)
+
+The first concrete instance of the framework — the **external-peer bridge** — is live and autonomous as of 2026-05-21. The bridge solves a specific problem: letting an external AI agent (ChatGPT, via its GitHub connector) participate as a peer in a multi-Claude-Code agent organization without giving it direct API access to the local environment.
+
+The architecture (all built in this run):
+
+```
+    External peer (ChatGPT)
+            ↓ writes markdown message
+    GitHub mailbox repo (private)
+            ↓ pulled on cycle wake
+    external-peer-cycle (partner-cycle subtype)
+            ↓ atomic claim + push-or-revert
+    Local recipient (claude-frontier / firm / linkedin / freshframe)
+            ↓ processes + writes reply
+    Same path back to external peer
+```
+
+Components shipped:
+
+- **Transport** — separate private GitHub repo as the mailbox. Markdown messages with YAML frontmatter, organized into `inbox/`, `claimed/`, `done/`, `threads/`. State transitions = git commits; audit trail = git log. Append-only JSONL event log per repo.
+- **Protocol v0.2** — message schema with required + optional fields (id, thread_id, from, to, status, created_at, priority, expires_at, dependencies, routing_hints, protocol_version). Grandfather logic for v0.1 messages.
+- **Validator** — `validate.py` runs in GitHub Actions on every push; rejects malformed messages, warns on protocol-version drift, checks definition-of-done strictness.
+- **Worker cycle** — `external-peer-cycle` skill (a partner-cycle subtype) that wakes on a self-tuning cadence (270s / 600s / 14400s ladder) and processes the mailbox. Includes Step 7.5 event-spine production (emits cross-project events for the foreign repo), Step 7.6 CI verification (post-push), and per-project fanout (Phase 1.1, gated on enablement).
+- **Supervisor** — `partner-cycle-supervisor` reads the worker heartbeat at 5× worker cadence; restarts the worker if stale. For autonomous execution to stop, BOTH chains must die simultaneously.
+- **Drift detector** — `version_drift_check.py` catches the recurring failure pattern where a spec version is bumped but downstream docs still reference the old version. Wired into the routine maintenance step of partner-cycles.
+- **Cross-project event spine** — shared event log on the operator's local filesystem; events from one project's commits get routed to other projects that should see them (`affects_projects` / `may_affect_projects` semantics).
+
+What this proves:
+
+- **External AI peers can participate without API access.** A markdown file + a git push is enough.
+- **Atomic claim discipline survives external peers.** `git push --force-with-lease` rejects races; failed pushes revert local commits.
+- **The autonomous loop self-perpetuates.** The cycle calls `ScheduleWakeup` on itself; the harness wakes a fresh Claude session that picks up state from a heartbeat JSON file. No daemon, no cron, no `claude -p` headless.
+- **Git author identity ≠ message author.** Frontmatter `from:` is the trust anchor until cryptographic identity is shipped (v0.3 roadmap).
+
 ## Status (May 2026)
 
 This is the public scaffold. The framework code, skills, principles, and tools were developed in a private workspace and are being progressively extracted, sanitized, and published here.
 
-**Not yet in this repo:**
-- `skills/` — session lifecycle templates, partner-cycle workers, wake-reader, supervisor
+**Not yet in this repo (extraction queue):**
+- `skills/` — session lifecycle templates, partner-cycle workers (`external-peer-cycle` first), wake-reader, supervisor
 - `agents/` — memory-librarian template, hiring-manager pattern
-- `tools/` — session_registry, curator_helper, contexts_lib, cross_session_dashboard
-- `docs/principles/` — Principles 16-21 (Memory Architecture, Spec Follows Shipped Reality, Continuous Cycles via ScheduleWakeup, Workspace-Aware Tool Architecture, Event-Spine Coordination)
-- `docs/PATTERN.md` — partner-cycle pattern spec
+- `tools/` — session_registry, curator_helper, contexts_lib, cross_session_dashboard, validate.py, forward_reply.py, atrium_inflight_check.py, version_drift_check.py
+- `docs/principles/` — Principles 16-21 (Memory Architecture, Spec Follows Shipped Reality, Continuous Cycles via ScheduleWakeup, Workspace-Aware Tool Architecture, Continuous Discovery, Event-Spine Coordination)
+- `docs/PATTERN.md` — partner-cycle pattern spec v0.8 (includes external-peer-cycle as 5th instance + cadence ladder + sole-pusher rule)
+- `docs/PROTOCOL.md` — atrium-mailbox message schema v0.2
 - `docs/PLATFORM_SPEC.md` — RFC-2119 MUST clauses
 - `docs/DEPLOY.md` — install + initialize
 - `setup` — gstack-style installer script
@@ -59,12 +95,13 @@ Coming over the next sessions.
 
 ## Roadmap
 
-- **v0.1 (current)**: scaffold + README + LICENSE
-- **v0.2**: session lifecycle skills + memory librarian sub-agent template + Principle 16 (Memory Architecture)
-- **v0.3**: partner-cycle pattern + autonomous loops via ScheduleWakeup
-- **v0.4**: contexts.yaml registry + multi-project disambiguation
-- **v0.5**: event-spine + cross-session inbox
-- **v1.0**: full framework + DEPLOY.md + installer + working examples
+- **v0.1** (DONE, S17): scaffold + README + LICENSE
+- **v0.1.5** (DONE, S18 2026-05-21): first reference implementation deployed (external-peer bridge: atrium-mailbox + external-peer-cycle + dual-loop supervisor + protocol v0.2 + validator + drift detector). Not yet extracted to this repo; lives in a private workspace.
+- **v0.2** (next): extract session lifecycle skills + memory librarian sub-agent template + Principle 16 (Memory Architecture) + the external-peer-cycle as the first concrete skill.
+- **v0.3**: partner-cycle pattern formalized + autonomous loops via ScheduleWakeup spec + signed-commit attestation (cryptographic identity for external peers).
+- **v0.4**: contexts.yaml registry + multi-project disambiguation + cross-project fanout (Phase 1.1).
+- **v0.5**: event-spine + cross-session inbox + Anthropic Routines integration (webhook wake replacing polling).
+- **v1.0**: full framework + DEPLOY.md + installer + working multi-project example.
 
 ## Inspiration + acknowledgments
 
