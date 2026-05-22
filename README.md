@@ -80,14 +80,22 @@ What this proves:
 
 This is the public scaffold. The framework code, skills, principles, and tools were developed in a private workspace and are being progressively extracted, sanitized, and published here.
 
+**The canonical architecture doc lives in the private workspace today** (will be extracted to `docs/PLATFORM_ARCHITECTURE.md` here once sequencing is ratified). It captures the 3-layer model that atrium implements:
+
+- **Layer 1 — atrium itself** (this repo): the OSS framework, installable
+- **Layer 2 — holding company** (private deployment): platform infrastructure + cross-portfolio coordination (VP of Hiring, shared registry, event spine, external-peer bridge)
+- **Layer 3 — operating businesses** (private deployment, multiple): each has its own identity, culture, doctrine, employees (Hires), and partner cycle
+
 **Not yet in this repo (extraction queue):**
-- `skills/` — session lifecycle templates, partner-cycle workers (`external-peer-cycle` first), wake-reader, supervisor
-- `agents/` — memory-librarian template, hiring-manager pattern
-- `tools/` — session_registry, curator_helper, contexts_lib, cross_session_dashboard, validate.py, forward_reply.py, atrium_inflight_check.py, version_drift_check.py
-- `docs/principles/` — Principles 16-21 (Memory Architecture, Spec Follows Shipped Reality, Continuous Cycles via ScheduleWakeup, Workspace-Aware Tool Architecture, Continuous Discovery, Event-Spine Coordination)
-- `docs/PATTERN.md` — partner-cycle pattern spec v0.8 (includes external-peer-cycle as 5th instance + cadence ladder + sole-pusher rule)
+- `docs/PLATFORM_ARCHITECTURE.md` — the 3-layer holding-company model (top-level architecture)
+- `docs/PARTNER_CYCLE_PATTERN.md` — partner-cycle pattern spec v0.8 (includes external-peer-cycle as 5th instance + cadence ladder + sole-pusher rule)
+- `docs/MULTI_AGENT_PATTERN.md` — sub-agent doctrine (Contractor / Hire / cmux-sibling; 2-tier broker via VP of Hiring + per-project Hiring Managers; final-report schema)
 - `docs/PROTOCOL.md` — atrium-mailbox message schema v0.2
 - `docs/PLATFORM_SPEC.md` — RFC-2119 MUST clauses
+- `docs/principles/` — Principles 16-21 (Memory Architecture, Spec Follows Shipped Reality, Continuous Cycles via ScheduleWakeup, Workspace-Aware Tool Architecture, Continuous Discovery, Event-Spine Coordination)
+- `skills/` — session lifecycle templates, partner-cycle workers (`external-peer-cycle` first), wake-reader, supervisor
+- `agents/` — memory-librarian template, vp-hiring template, hiring-manager template
+- `tools/` — session_registry (with AQ-2 hierarchical sub-agent IDs), contexts_lib (with AQ-1 display labels), cross_session_dashboard, validate.py, forward_reply.py, atrium_inflight_check.py, version_drift_check.py
 - `docs/DEPLOY.md` — install + initialize
 - `setup` — gstack-style installer script
 
@@ -97,6 +105,7 @@ Coming over the next sessions.
 
 - **v0.1** (DONE, S17): scaffold + README + LICENSE
 - **v0.1.5** (DONE, S18 2026-05-21): first reference implementation deployed (external-peer bridge: atrium-mailbox + external-peer-cycle + dual-loop supervisor + protocol v0.2 + validator + drift detector). Not yet extracted to this repo; lives in a private workspace.
+- **v0.1.6** (DONE, S19 2026-05-22): multi-agent platform v1.0 doctrine landed in the private workspace — PLATFORM_ARCHITECTURE.md (3-layer holding-company model) + MULTI_AGENT_PATTERN.md (Contractor / Hire / cmux-sibling, 2-tier broker via VP of Hiring + per-project HMs) + AQ-1 display labels + AQ-2 hierarchical sub-agent IDs + AQ-3 final-report schema. Generic enough for extraction; awaiting sequencing decision.
 - **v0.2** (next): extract session lifecycle skills + memory librarian sub-agent template + Principle 16 (Memory Architecture) + the external-peer-cycle as the first concrete skill.
 - **v0.3**: partner-cycle pattern formalized + autonomous loops via ScheduleWakeup spec + signed-commit attestation (cryptographic identity for external peers).
 - **v0.4**: contexts.yaml registry + multi-project disambiguation + cross-project fanout (Phase 1.1).
